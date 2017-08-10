@@ -1,5 +1,4 @@
 require "streamy_csv/version"
-
 module StreamyCsv
   CSV_OPERATORS = ['+','-','=','@','%']
   UNESCAPED_PIPES_RGX = /(?<!\\)(?:\\{2})*\K\|/
@@ -29,23 +28,14 @@ module StreamyCsv
     headers.delete("Content-Length")
   end
 
-  def csv_lines(header_row, sanitize, &block)
-    Enumerator.new do |yielder|
-      rows = appendHeader([], header_row, sanitize)
-      block.call(rows)
-      rows.each do |row|
-        sanitize!(row) if sanitize
-        yielder.yield row
-      end
+  def csv_lines(header_row, sanitize)
+    rows = []
+    rows << header_row if header_row && header_row.any?
+    yield rows if block_given?
+    rows.map do |row|
+      sanitize!(row) if sanitize
+      row.to_s
     end
-  end
-
-  def appendHeader(rows, header_row, sanitize)
-    if header_row && header_row.any?
-      sanitize! header_row if sanitize
-      rows << header_row.to_s
-    end
-    rows
   end
 
   def sanitize!(enumerable)
